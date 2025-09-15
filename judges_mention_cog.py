@@ -3,6 +3,7 @@ import re
 import json
 import datetime
 import logging
+import asyncio
 
 import discord
 from discord.ext import commands
@@ -62,6 +63,8 @@ class JudgesMentionCog(commands.Cog):
             This event is triggered when someone creates a post in the forum.
         """
 
+        await asyncio.sleep(5)
+
         check = ["перма дк", "пдк"]
         message = await thread.fetch_message(thread.id)
         if (not enable_mention): return
@@ -94,15 +97,6 @@ class JudgesMentionCog(commands.Cog):
             if (not without_vacation): return
             for id in without_vacation:
                 mentions += f"<@{id}> "
-
-        def check(message):
-            return message.channel == thread
-        
-        try:
-            await self.bot.wait_for('message', check=check, timeout=5.0)
-        except Exception as e:
-            self.logger.error(e)
-            return
 
         await thread.send(mentions)
 
