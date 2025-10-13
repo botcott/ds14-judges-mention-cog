@@ -4,7 +4,7 @@ from typing import Dict, Optional, Any, List
 from sqlalchemy import select, and_, func, or_
 
 from database import async_session_maker, engine
-from database.models import ServerBan, ServerRoleBan, AdminNotes, ServerUnBan, ServerRoleUnban
+from database.models import ServerBan, ServerRoleBan, AdminNotes, ServerUnBan, ServerRoleUnBan
 
 class BansInfo:
     @staticmethod
@@ -29,10 +29,10 @@ class BansInfo:
         async with async_session_maker() as session:
             active_role_bans = await session.execute(
                 select(ServerRoleBan)
-                .outerjoin(ServerRoleUnban, ServerRoleBan.server_role_ban_id == ServerRoleUnban.ban_id)
+                .outerjoin(ServerRoleUnBan, ServerRoleBan.server_role_ban_id == ServerRoleUnBan.ban_id)
                 .where(
                     ServerRoleBan.player_user_id == user_id,
-                    ServerRoleUnban.ban_id.is_(None),
+                    ServerRoleUnBan.ban_id.is_(None),
                     or_(
                         ServerRoleBan.expiration_time > func.now(),
                         ServerRoleBan.expiration_time.is_(None)
