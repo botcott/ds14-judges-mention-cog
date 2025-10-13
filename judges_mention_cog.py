@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import urllib.parse
 
 import discord
 from discord.ext import commands
@@ -126,6 +127,30 @@ class AppealMenuButtonView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
+    async def get_auth_discord_view(self, member: discord.Member):
+        state = str(member.id)
+
+        params = {
+            "response_type": "code",
+            "client_id": "912170a7-e6d8-4c69-a5e7-f21170876408",
+            "redirect_uri": "https://rimworld.deadspace14.net/auth/callback",
+            "scope": "openid profile email",
+            "state": state
+        }
+
+        base_url = "https://account.spacestation14.com/connect/authorize"
+        auth_url = f"{base_url}?{urllib.parse.urlencode(params)}"
+
+        button = discord.ui.Button(
+            label="Быстрая привязка SS14 к Discord",
+            url=auth_url,
+            style=discord.ButtonStyle.link
+        )
+
+        view = discord.ui.View()
+        view.add_item(button)
+        return view
+
     @discord.ui.button(label="Меню", style=discord.ButtonStyle.primary, custom_id="appeal_menu:main")
     async def menu_button(self, button: discord.Button, interaction: discord.Interaction):
         thread: discord.Thread = interaction.channel
@@ -140,8 +165,10 @@ class AppealMenuButtonView(discord.ui.View):
 
         player = await player_api.get_player_info(discord_id=author_id)
         if not player or not player.get("userId"):
-            await thread.send(f"{thread.owner.mention} вы не привязали Дискорд в игре. "
-                              f"Многие функции по обжалованию вам недоступны")
+            await interaction.response.send_message(
+                f"{thread.owner.mention} вы не привязали Дискорд в игре. "
+                f"Многие функции по обжалованию вам недоступны. Сперва привяжи Дискорд, затем нажмите кнопку 'Меню' "
+                f"повторно", view=await self.get_auth_discord_view(interaction.user), ephemeral=True)
             return
 
         user_id = player["userId"]
