@@ -21,6 +21,7 @@ ENABLE_MENTION = bool(cfg["enable_mention"])
 MENTION_ON_VACATION = bool(cfg["mention_on_vacation"])
 JUDGE_ROLE_ID = int(cfg["judge_role_id"])
 VACATION_ROLE_ID = int(cfg["vacation_role_id"])
+ROLES_FOR_BVO = cfg["roles_for_bvo"]
 
 LINK_FOR_CONNECT_DISCORD = cfg["link_for_connect_discord"]
 CONNECTION_LINK_API_KEY = cfg["connection_link_api_key"]
