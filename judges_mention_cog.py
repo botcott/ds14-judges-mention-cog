@@ -36,6 +36,7 @@ async def get_members_without_vacation(members_with_judge):
     return [member for member in members_with_judge
             if not any(role.id == VACATION_ROLE_ID for role in member.roles)]
 
+
 async def get_connection_url(member_id: int):
     async with httpx.AsyncClient() as client:
         try:
@@ -236,6 +237,39 @@ class AppealSubMenuView(discord.ui.View):
         view = BanSelectionView(self.author_id, self.user_id, notes, ban_type="note")
         await interaction.response.send_message("Ваши предупреждения:", view=view, ephemeral=True)
 
+    @discord.ui.button(label="Не нашел нарушение", style=discord.ButtonStyle.secondary, custom_id="appeal_menu:other")
+    async def other_button(self, button: discord.Button, interaction: discord.Interaction):
+        view = OtherViolationView()
+        await interaction.response.send_message("Выбирая данный пункт, вы подтверждаете, что вы не нашли нужного "
+                                                "наказания (особенно, если вы игрок Фронтира)",
+                                                view=view, ephemeral=True)
+
+
+class OtherViolationView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+
+    @discord.ui.button(label="Подтвердить отсутствие нарушения", style=discord.ButtonStyle.success,
+                       custom_id="other_view:confirm_no_violation")
+    async def confirm_no_violation_button(self, button: discord.Button, interaction: discord.Interaction):
+        judge_members = await get_judge_members(interaction.guild)
+        if not judge_members:
+            await interaction.response.send_message("Судьи не найдены. Обратитесь к более высокостоящей администрации")
+            return
+
+        if not MENTION_ON_VACATION:
+            judge_members = await get_members_without_vacation(judge_members)
+
+        if not judge_members:
+            await interaction.response.send_message("Все судьи в отпуске. Обратитесь к более высокостоящей администрации")
+            logger.info("Нет судей вызова")
+            return
+
+        await interaction.response.send_message(f"Пользователь отметил, что он НЕ нашел своего нарушения.\n"
+                                        f"Активные судьи: "
+                                        f"{create_mentions_string([judge.id for judge in judge_members])}."
+                                        f"Ожидайте их ответа")
+
 
 class BanSelectionView(discord.ui.View):
     def __init__(self, author_id: int, user_id: str, items, ban_type: str):
@@ -354,12 +388,14 @@ class BanSelect(discord.ui.Select):
 
             judge_members = await get_judge_members(guild)
             if not judge_members:
+                await interaction.followup.send("Судьи не найдены. Обратитесь к более высокостоящей администрации")
                 return
 
             if not MENTION_ON_VACATION:
                 judge_members = await get_members_without_vacation(judge_members)
 
             if not judge_members:
+                await interaction.followup.send("Все судьи в отпуске. Обратитесь к более высокостоящей администрации")
                 logger.info("Нет судей вызова")
                 return
             await interaction.followup.send(f"Активные судьи: "
